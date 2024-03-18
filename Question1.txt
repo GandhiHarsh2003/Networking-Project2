@@ -1,0 +1,6 @@
+What is the value of x in the equation 3x + 3 = 12
+x = 2
+x = 3
+x = 6
+x = 5
+Correct: 2
