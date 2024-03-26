@@ -1,13 +1,19 @@
 import java.io.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
 
 public class Client {
     private Socket socket;
+    private String CLIENT_ID;
     private final String serverAddress;
     private final int serverPort;
     private ClientWindow clientWindow;
     private PrintWriter out;
+    private static final int UDPport = 4445;
+    public boolean read = true;
 
     public Client(String serverAddress, int serverPort) {
         this.serverAddress = serverAddress;
@@ -20,28 +26,42 @@ public class Client {
             socket = new Socket(serverAddress, serverPort);
             out = new PrintWriter(socket.getOutputStream(), true);
             DataInputStream dis = new DataInputStream(socket.getInputStream());
-            while (true) {
-                int fileLength = dis.readInt();
-                if (fileLength > 0) {
-                    byte[] fileContent = new byte[fileLength];
-                    dis.readFully(fileContent, 0, fileContent.length);
-                    String fileName = "clientQuestion.txt";
-                    saveToFile(fileName, fileContent);
-                    displayQuestionFromFile(fileName);
-                }
-            }
+            String clientId = dis.readUTF();
+            CLIENT_ID = clientId;
+            clientWindow.updateClientID(clientId);
+            listenForServerMessages(dis);
+
         } catch (IOException e) {
             System.err.println("Could not connect to the server or receive the file: " + e.getMessage());
-        } finally {
-            try {
-                if (socket != null) {
-                    socket.close();
-                }
-            } catch (IOException e) {
-                System.err.println("Error closing socket: " + e.getMessage());
-            }
         }
     }
+
+    private void listenForServerMessages(DataInputStream dis) {
+        new Thread(() -> {
+            try {
+                while (!socket.isClosed()) {
+                    if (read) {
+                        read = false;
+                        int fileLength = dis.readInt();
+                        if (fileLength > 0) {
+                            //System.out.println(fileLength);
+                            byte[] content = new byte[fileLength];
+                            dis.readFully(content, 0, fileLength);
+                            String fileName = "clientQuestion.txt";
+                            saveToFile(fileName, content);
+                            displayQuestionFromFile(fileName);
+                            clientWindow.disableOptions();
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                System.err.println("Error reading from server: " + e.getMessage());
+            }
+        }).start();
+    }
+    
+
+  
 
     private static void saveToFile(String fileName, byte[] content) throws IOException {
         try (FileOutputStream fos = new FileOutputStream(fileName)) {
@@ -53,7 +73,7 @@ public class Client {
         try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
             StringBuilder questionBuilder = new StringBuilder();
             ArrayList<String> options = new ArrayList<>();
-            String correctAnswer = ""; 
+            String correctAnswer = "";
 
             String line;
             while ((line = reader.readLine()) != null) {
@@ -67,7 +87,6 @@ public class Client {
                     }
                 }
             }
-
             this.clientWindow.updateQuestion(questionBuilder.toString());
             this.clientWindow.setOptions(options.toArray(new String[0]), correctAnswer);
 
@@ -78,9 +97,48 @@ public class Client {
 
     public void sendAnswerFeedback(String feedback) {
         if (out != null) {
-            System.out.println(feedback);
+            read = true;
+            //System.out.println(feedback);
             out.println(feedback);
             out.flush();
+        }
+    }
+
+    public void sendBuzz() {
+        try (DatagramSocket socket = new DatagramSocket()) {
+            String message = String.valueOf(CLIENT_ID);
+            byte[] messageBytes = message.getBytes();
+            InetAddress serverAddress = InetAddress.getByName("127.0.0.1");
+            DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, serverAddress, UDPport);
+            socket.send(packet);
+            sendBuzzToServer();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sendBuzzToServer() {
+        if (out != null) {
+            try {
+                out.println("buzz");
+                out.println(CLIENT_ID);
+                out.flush();
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                String response = reader.readLine();
+
+                System.out.println(response);
+                if ("ack".equals(response)) {
+                    clientWindow.enableOptions();
+                    System.out.println("I was first!");
+                } else {
+                    System.out.println("Not first.");
+                }
+            } catch (Exception e) {
+                System.out.println("An error occurred: " + e.getMessage());
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("PrintWriter 'out' is not yet initialized or socket is closed.");
         }
     }
 

@@ -8,6 +8,7 @@ import javax.swing.*;
 
 public class ClientWindow implements ActionListener {
 	private JButton poll;
+	private JLabel clientID;
 	private JButton submit;
 	private JRadioButton options[];
 	private ButtonGroup optionGroup;
@@ -54,6 +55,10 @@ public class ClientWindow implements ActionListener {
 		t.schedule(clock, 0, 1000); // clock is called every second
 		window.add(timer);
 
+		clientID = new JLabel("Client ID:"); // represents the score
+		clientID.setBounds(280, 20, 100, 20);
+		window.add(clientID);
+
 		score = new JLabel("SCORE:"); // represents the score
 		score.setBounds(50, 250, 50, 20);
 		window.add(score);
@@ -84,18 +89,21 @@ public class ClientWindow implements ActionListener {
 	// this method is called when you press either of the buttons- submit/poll
 	@Override
 	public void actionPerformed(ActionEvent e) {
-		if ("Submit".equals(e.getActionCommand())) {
-            String selectedOption = getSelectedOptionIndex();
-            if (selectedOption != null && selectedOption.equals(answer)) {
+		if ("Poll".equals(e.getActionCommand())) {
+			client.sendBuzz(); // Call the method when Poll button is clicked
+		} else if ("Submit".equals(e.getActionCommand())) {
+			// Existing submit logic
+			String selectedOption = getSelectedOptionIndex();
+			if (selectedOption != null && selectedOption.equals(answer)) {
 				updateScore(true);
-				client.sendAnswerFeedback("correct");
-                JOptionPane.showMessageDialog(window, "Correct Answer!");
-            } else {
+				client.sendAnswerFeedback("Next");
+				JOptionPane.showMessageDialog(window, "Correct Answer!");
+			} else {
 				updateScore(false);
-				client.sendAnswerFeedback("wrong");
+				client.sendAnswerFeedback("Next");
 				JOptionPane.showMessageDialog(window, "Wrong Answer!");
-            }
-        }
+			}
+		}
 		// System.out.println("You clicked " + e.getActionCommand());
 
 		// // input refers to the radio button you selected or button you clicked
@@ -137,6 +145,10 @@ public class ClientWindow implements ActionListener {
 		// // TILL HERE ***
 
 	}
+
+	public void updateClientID(String id) {
+		clientID.setText(id);
+    }
 
 	private void updateScore(boolean correct) {
 		if (correct) {
@@ -195,9 +207,17 @@ public class ClientWindow implements ActionListener {
 			options[i].setText(optionsText[i]);
 			options[i].setVisible(true);
 		}
-		for (int i = optionsText.length; i < options.length; i++) {
-			options[i].setVisible(false);
+	}
+
+	public void disableOptions() {
+		for (int i = 0; i < options.length; i++) {
+			options[i].setEnabled(false);
 		}
 	}
 
+	public void enableOptions() {
+		for (int i = 0; i < options.length; i++) {
+			options[i].setEnabled(true);
+		}
+	}
 }
