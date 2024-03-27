@@ -14,6 +14,7 @@ public class ClientHandler implements Runnable {
     private PrintWriter out;
     private String receivedID;
     private DataOutputStream dos;
+	private DataInputStream dis;
     private BufferedReader in;
     private int clientId;
 
@@ -23,6 +24,7 @@ public class ClientHandler implements Runnable {
         this.clientId = clientId;
         try {
             dos = new DataOutputStream(clientSocket.getOutputStream());
+			dis = new DataInputStream(socket.getInputStream());
             in = new BufferedReader(new InputStreamReader(clientSocket.getInputStream()));
             out = new PrintWriter(clientSocket.getOutputStream(), true);
         } catch (IOException e) {
@@ -39,17 +41,22 @@ public class ClientHandler implements Runnable {
                 if (!handlers.contains(this)) {
                     handlers.add(this);
                 }
+                System.out.println("Next");
+
                 sendCurrentQuestion();
             }
 
             String feedback;
-            while ((feedback = in.readLine()) != null) {
-                //System.out.println("Feedback from client " + clientId + ": " + feedback);
+            while ((feedback = dis.readUTF()) != null) {
+                System.out.println("Feedback from client " + clientId + ": " + feedback);
                 synchronized (handlers) {
                     if ("buzz".equals(feedback.trim())) {
-                        receivedID = in.readLine();
+                        receivedID = dis.readUTF();
+                        System.out.println(receivedID);
                         handleBuzz();
                     } else if ("Next".equals(feedback.trim())) {
+                        udpThread.removeClients();
+                        System.out.println("sent the notification");
                         handleNext();
                     }
                 }
@@ -77,6 +84,7 @@ public class ClientHandler implements Runnable {
         synchronized (ClientHandler.class) {
             currentQuestionIndex++;
             for (ClientHandler handler : handlers) {
+
                 handler.sendCurrentQuestion();
             }
         }
@@ -84,23 +92,23 @@ public class ClientHandler implements Runnable {
 
     private void sendCurrentQuestion() throws IOException {
         String questionFilePath = "Question" + currentQuestionIndex + ".txt";
-        //System.out.println(questionFilePath);
         byte[] fileContent = Files.readAllBytes(Paths.get(questionFilePath));
-        //System.out.println(fileContent.length);
+        System.out.println(fileContent.length);
+        dos.writeUTF("Next Question");
         dos.writeInt(fileContent.length);
         dos.write(fileContent);
         dos.flush();
     }
 
-    private void handleBuzz() {
+    private void handleBuzz() throws IOException {
         String firstClientId = udpThread.firstInLine();
         if (receivedID.equals(firstClientId)) {
             System.out.println("sending ack");
-            out.println("ack");
-            out.flush();
+            dos.writeUTF("ack");
+            dos.flush();
         } else {
-            out.println("nack");
-            out.flush();
+            dos.writeUTF("nack");
+            dos.flush();
         }
     }
 }

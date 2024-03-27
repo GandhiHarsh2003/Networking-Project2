@@ -23,7 +23,7 @@ public class UDPThread implements Runnable {
                 socket.receive(packet);
                 String clientId = new String(packet.getData(), 0, packet.getLength()).trim();
                 System.out.println(clientId);
-                queue.add(clientId);
+                queue.offer(clientId);
                 //System.out.println("client id is " + clientId);
             } catch (IOException e) {
                 System.out.println("UDP Thread Error: " + e.getMessage());
@@ -40,5 +40,11 @@ public class UDPThread implements Runnable {
             i++;
         } 
        return queue.peek();
+    }
+
+    public void removeClients() {
+        while(!queue.isEmpty()) {
+            queue.poll();
+        }
     }
 }
