@@ -110,7 +110,6 @@ public class Client {
 	}
 
 	public void sendAnswerFeedback(String feedback) {
-		read = true;
 		System.out.println(feedback);
 		if (dos != null) {
 			try {

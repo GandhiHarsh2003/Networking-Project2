@@ -17,6 +17,7 @@ public class ClientHandler implements Runnable {
 	private DataInputStream dis;
     private BufferedReader in;
     private int clientId;
+    private String correctAnswer;
 
     public ClientHandler(Socket socket, int clientId, UDPThread udpThread) {
         this.clientSocket = socket;
@@ -83,11 +84,26 @@ public class ClientHandler implements Runnable {
     private void handleNext() throws IOException {
         synchronized (ClientHandler.class) {
             currentQuestionIndex++;
+            findAnswer();
             for (ClientHandler handler : handlers) {
 
                 handler.sendCurrentQuestion();
             }
         }
+    }
+
+    private void findAnswer() {
+        String questionFilePath = "Question" + currentQuestionIndex + ".txt";
+        try (BufferedReader reader = new BufferedReader(new FileReader(questionFilePath))) {
+			String line;
+			while ((line = reader.readLine()) != null) {
+				if (line.startsWith("Correct: ")) {
+					correctAnswer = line.replace("Correct: ", "");
+				}
+			}
+		} catch (IOException e) {
+			System.err.println("Error reading the question file: " + e.getMessage());
+		}
     }
 
     private void sendCurrentQuestion() throws IOException {
