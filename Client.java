@@ -11,7 +11,6 @@ public class Client {
 	private final String serverAddress;
 	private final int serverPort;
 	private ClientWindow clientWindow;
-	private PrintWriter out;
 	private static final int UDPport = 4445;
 	public boolean read = true;
 	private DataInputStream dis;
@@ -28,53 +27,87 @@ public class Client {
 		try {
 			socket = new Socket(serverAddress, serverPort);
 			dos = new DataOutputStream(socket.getOutputStream());
-			out = new PrintWriter(socket.getOutputStream(), true);
 			dis = new DataInputStream(socket.getInputStream());
 			String clientId = dis.readUTF();
 			CLIENT_ID = clientId;
 			clientWindow.updateClientID(clientId);
 			listenForServerMessages(dis);
-
 		} catch (IOException e) {
 			System.err.println("Could not connect to the server or receive the file: " + e.getMessage());
 		}
 	}
 
 	private void listenForServerMessages(DataInputStream dis) {
-	    new Thread(() -> {
-	        try {
-	            while (!socket.isClosed()) {
-	                String response = dis.readUTF();
-	                System.out.println("Response from server: " + response);
-	                switch (response) {
-	                    case "ack":
-	                        clientWindow.enableOptions();
-	                        System.out.println("I was first!");
-	                        break;
-	                    case "nack":
-	                        System.out.println("Not first.");
-	                        break;
-	                    case "Next Question":
-	                    	System.out.println("Curr Question is happening");
+		new Thread(() -> {
+			try {
+				boolean isFinished = true;
+				while (!socket.isClosed() && isFinished) {
+					String response = dis.readUTF();
+					System.out.println("Response from server: " + response);
+					switch (response) {
+						case "ack":
+							clientWindow.enableOptions();
+							clientWindow.enableSubmit(true);
+							clientWindow.enablePoll(false);
+							clientWindow.startTimer();
+							System.out.println("I was first!");
+							break;
+						case "nack":
+							System.out.println("Not first.");
+							break;
+						case "Next Question":
+							System.out.println("Curr Question is happening");
 							int fileLength = dis.readInt();
 							System.out.println("file length " + fileLength);
+							clientWindow.startTimer();
 							if (fileLength > 0) {
-								System.out.println("Curr Question is happening22222");
 								byte[] content = new byte[fileLength];
 								dis.readFully(content, 0, fileLength);
 								String fileName = "clientQuestion.txt";
 								saveToFile(fileName, content);
 								displayQuestionFromFile(fileName);
+								clientWindow.enableSubmit(false);
+								clientWindow.enablePoll(true);
 								clientWindow.disableOptions();
 								response = "";
-							}	                        
+							}
 							break;
-	                }
-	            }
-	        } catch (IOException e) {
-	            System.err.println("Error reading from server: " + e.getMessage());
-	        }
-	    }).start();
+						case "UPDATE":
+							System.out.println("There is an update");
+							String currScore = dis.readUTF();
+							String correctOrWrong = dis.readUTF();
+							clientWindow.updateScore(currScore, correctOrWrong);
+							break;
+						case "FINISHED":
+							System.out.println("Game is finished");
+							String winningMessage = dis.readUTF();
+							clientWindow.finished(winningMessage);
+							break;
+						case "TERMINATE":
+							isFinished = false;
+							System.out.println("Server has terminated the connection. Exiting...");
+							closeConnection();
+							System.exit(0);
+							break;
+					}
+				}
+			} catch (IOException e) {
+				System.err.println("Error reading from server: " + e.getMessage());
+			}
+		}).start();
+	}
+
+	private void closeConnection() {
+		try {
+			if (dis != null)
+				dis.close();
+			if (dos != null)
+				dos.close();
+			if (socket != null)
+				socket.close();
+		} catch (IOException e) {
+			System.err.println("Error closing client resources: " + e.getMessage());
+		}
 	}
 
 	private static void saveToFile(String fileName, byte[] content) throws IOException {
@@ -87,12 +120,11 @@ public class Client {
 		try (BufferedReader reader = new BufferedReader(new FileReader(fileName))) {
 			StringBuilder questionBuilder = new StringBuilder();
 			ArrayList<String> options = new ArrayList<>();
-			String correctAnswer = "";
 
 			String line;
 			while ((line = reader.readLine()) != null) {
 				if (line.startsWith("Correct: ")) {
-					correctAnswer = line.replace("Correct: ", "");
+					break;
 				} else if (!line.trim().isEmpty()) {
 					if (questionBuilder.length() == 0) {
 						questionBuilder.append(line);
@@ -102,7 +134,7 @@ public class Client {
 				}
 			}
 			this.clientWindow.updateQuestion(questionBuilder.toString());
-			this.clientWindow.setOptions(options.toArray(new String[0]), correctAnswer);
+			this.clientWindow.setOptions(options.toArray(new String[0]));
 
 		} catch (IOException e) {
 			System.err.println("Error reading the question file: " + e.getMessage());
@@ -111,6 +143,7 @@ public class Client {
 
 	public void sendAnswerFeedback(String feedback) {
 		System.out.println(feedback);
+		System.out.println("Client id sending is " + CLIENT_ID);
 		if (dos != null) {
 			try {
 				dos.writeUTF(feedback);
@@ -125,28 +158,15 @@ public class Client {
 
 	public void sendBuzz() {
 		try (DatagramSocket socket = new DatagramSocket()) {
+			System.out.println("buzz has been sent");
 			String message = String.valueOf(CLIENT_ID);
 			byte[] messageBytes = message.getBytes();
 			InetAddress serverAddress = InetAddress.getByName(usersIP);
 			DatagramPacket packet = new DatagramPacket(messageBytes, messageBytes.length, serverAddress, UDPport);
 			socket.send(packet);
-			sendBuzzToServer();
+			sendAnswerFeedback("Buzz");
 		} catch (IOException e) {
 			e.printStackTrace();
-		}
-	}
-
-	public void sendBuzzToServer() {
-		if (dos != null) {
-			try {
-				dos.writeUTF("buzz");
-				dos.writeUTF(CLIENT_ID);
-			} catch (Exception e) {
-				System.out.println("An error occurred: " + e.getMessage());
-				e.printStackTrace();
-			}
-		} else {
-			System.out.println("DataOutputStream 'dos' is not yet initialized or socket is closed.");
 		}
 	}
 

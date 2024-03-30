@@ -22,9 +22,8 @@ public class UDPThread implements Runnable {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String clientId = new String(packet.getData(), 0, packet.getLength()).trim();
-                System.out.println(clientId);
                 queue.offer(clientId);
-                //System.out.println("client id is " + clientId);
+                System.out.println("queue size is " + queue.size());
             } catch (IOException e) {
                 System.out.println("UDP Thread Error: " + e.getMessage());
             }
@@ -46,5 +45,9 @@ public class UDPThread implements Runnable {
         while(!queue.isEmpty()) {
             queue.poll();
         }
+    }
+
+    public boolean checkIfEmpty() {
+        return queue.isEmpty();
     }
 }

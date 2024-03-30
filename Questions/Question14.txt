@@ -1,0 +1,6 @@
+What is the value of x in the equation 9x + 18 = 45?
+x = 2
+x = 3
+x = 4
+x = 5
+Correct: 2

@@ -7,19 +7,21 @@ import java.util.Timer;
 import javax.swing.*;
 
 public class ClientWindow implements ActionListener {
-	private JButton poll;
+	private static JButton poll;
 	private JLabel clientID;
 	private JButton submit;
 	private JRadioButton options[];
 	private ButtonGroup optionGroup;
 	private JLabel question;
-	private JLabel timer;
+	private static JLabel timerLabel;
 	private JLabel score;
 	private JLabel currScore;
-	private int currentScore = 0;
+	private JLabel clientIDLable;
 	private TimerTask clock;
-	private String answer;
-	private Client client;
+	private static Client client;
+	private static boolean hasSubmitted = false;
+	private Timer timer;
+	private static boolean hasPolled = false;
 
 	private JFrame window;
 
@@ -48,16 +50,17 @@ public class ClientWindow implements ActionListener {
 			optionGroup.add(options[index]);
 		}
 
-		timer = new JLabel("TIMER"); // represents the countdown shown on the window
-		timer.setBounds(250, 250, 100, 20);
-		clock = new TimerCode(30); // represents clocked task that should run after X seconds
-		Timer t = new Timer(); // event generator
-		t.schedule(clock, 0, 1000); // clock is called every second
-		window.add(timer);
+		timerLabel = new JLabel("TIMER"); // represents the countdown shown on the window
+		timerLabel.setBounds(250, 250, 100, 20);
+		window.add(timerLabel);
 
 		clientID = new JLabel("Client ID:"); // represents the score
-		clientID.setBounds(280, 20, 100, 20);
+		clientID.setBounds(270, 20, 100, 20);
 		window.add(clientID);
+
+		clientIDLable = new JLabel("1"); // represents the score
+		clientIDLable.setBounds(335, 20, 100, 20);
+		window.add(clientIDLable);
 
 		score = new JLabel("SCORE:"); // represents the score
 		score.setBounds(50, 250, 50, 20);
@@ -90,18 +93,17 @@ public class ClientWindow implements ActionListener {
 	@Override
 	public void actionPerformed(ActionEvent e) {
 		if ("Poll".equals(e.getActionCommand())) {
-			client.sendBuzz(); // Call the method when Poll button is clicked
+			client.sendBuzz();
+			hasPolled = true;
+			hasSubmitted = false;
 		} else if ("Submit".equals(e.getActionCommand())) {
-			// Existing submit logic
+			hasSubmitted = true;
+			timer.cancel();
+            timer = null;
 			String selectedOption = getSelectedOptionIndex();
-			if (selectedOption != null && selectedOption.equals(answer)) {
-				updateScore(true);
-				client.sendAnswerFeedback("Next");
-				JOptionPane.showMessageDialog(window, "Correct Answer!");
-			} else {
-				updateScore(false);
-				client.sendAnswerFeedback("Next");
-				JOptionPane.showMessageDialog(window, "Wrong Answer!");
+			if (selectedOption != null) {
+				System.out.println("picked the option " + selectedOption);
+				client.sendAnswerFeedback(selectedOption);
 			}
 		}
 		// System.out.println("You clicked " + e.getActionCommand());
@@ -146,17 +148,20 @@ public class ClientWindow implements ActionListener {
 
 	}
 
+
 	public void updateClientID(String id) {
-		clientID.setText(id);
+		clientIDLable.setText(id);
     }
 
-	private void updateScore(boolean correct) {
-		if (correct) {
-			currentScore += 10; 
-		} else {
-			currentScore -= 10; 
+	public void updateScore(String score, String correctOrWrong) {
+		currScore.setText(score);
+		if(correctOrWrong.equals("Correct")) {
+			JOptionPane.showMessageDialog(window, "Correct Answer!!");
+		} else if(correctOrWrong.equals("Wrong")){
+			JOptionPane.showMessageDialog(window, "Wrong Answer!!");
+		} else if(correctOrWrong.equals("Timer ran out")){
+			JOptionPane.showMessageDialog(window, "Time Up!! Be Quicker Next Time!!");
 		}
-		currScore.setText(String.valueOf(currentScore));
     }
 
 	private String getSelectedOptionIndex() {
@@ -168,41 +173,53 @@ public class ClientWindow implements ActionListener {
         return null; 
     }
 
+	public void startTimer() {
+        if (timer != null) {
+            timer.cancel();
+        }
+        timer = new Timer();
+        clock = new TimerCode(10);
+        timer.schedule(clock, 0, 1000); 
+    }
+
 	// this class is responsible for running the timer on the window
-	public class TimerCode extends TimerTask {
-		private int duration; // write setters and getters as you need
+	private static class TimerCode extends TimerTask {
+        private int duration;
 
-		public TimerCode(int duration) {
-			this.duration = duration;
-		}
+        public TimerCode(int duration) {
+            this.duration = duration;
+        }
 
-		@Override
-		public void run() {
-			if (duration < 0) {
-				timer.setText("Timer expired");
-				window.repaint();
-				this.cancel(); // cancel the timed task
-				return;
-				// you can enable/disable your buttons for poll/submit here as needed
-			}
-
-			if (duration < 6)
-				timer.setForeground(Color.red);
-			else
-				timer.setForeground(Color.black);
-
-			timer.setText(duration + "");
-			duration--;
-			window.repaint();
-		}
-	}
+        @Override
+        public void run() {
+            SwingUtilities.invokeLater(() -> {
+                if (duration < 0) {
+					if(!hasPolled && poll.isEnabled()) {
+						enablePoll(false);
+						client.sendAnswerFeedback("Don't know");
+					} else if (!hasSubmitted) {
+                        client.sendAnswerFeedback("Didn't answer");
+                    }
+                    timerLabel.setText("Timer expired");
+                    this.cancel(); 
+                    return;
+                }
+                if (duration < 6) {
+                    timerLabel.setForeground(Color.red);
+                } else {
+                    timerLabel.setForeground(Color.black);
+                }
+                timerLabel.setText("Time: " + duration + "s");
+                duration--;
+            });
+        }
+    }
 
 	public void updateQuestion(String text) {
 		question.setText(text);
 	}
 
-	public void setOptions(String[] optionsText, String correctAnswer) {
-		answer = correctAnswer;
+	public void setOptions(String[] optionsText) {
 		for (int i = 0; i < options.length && i < optionsText.length; i++) {
 			options[i].setText(optionsText[i]);
 			options[i].setVisible(true);
@@ -219,5 +236,20 @@ public class ClientWindow implements ActionListener {
 		for (int i = 0; i < options.length; i++) {
 			options[i].setEnabled(true);
 		}
+	}
+
+	public void enableSubmit(boolean enable) {
+		if(enable == false) {
+			hasPolled = false;
+		}
+		submit.setEnabled(enable);
+	}
+
+	public static void enablePoll(boolean enable) {
+		poll.setEnabled(enable);
+	}
+
+	public void finished(String message) {
+		JOptionPane.showMessageDialog(window, message);
 	}
 }

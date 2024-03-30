@@ -1,0 +1,6 @@
+What is the value of x in the equation 5x + 5 = 35?
+x = 5
+x = 8
+x = 7
+x = 6
+Correct: 4
