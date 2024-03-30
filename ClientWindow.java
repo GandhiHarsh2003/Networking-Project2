@@ -9,7 +9,7 @@ import javax.swing.*;
 public class ClientWindow implements ActionListener {
 	private static JButton poll;
 	private JLabel clientID;
-	private JButton submit;
+	private static JButton submit;
 	private JRadioButton options[];
 	private ButtonGroup optionGroup;
 	private JLabel question;
@@ -19,9 +19,8 @@ public class ClientWindow implements ActionListener {
 	private JLabel clientIDLable;
 	private TimerTask clock;
 	private static Client client;
-	private static boolean hasSubmitted = false;
 	private Timer timer;
-	private static boolean hasPolled = false;
+	public static boolean canAnswer = false;
 
 	private JFrame window;
 
@@ -94,10 +93,7 @@ public class ClientWindow implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if ("Poll".equals(e.getActionCommand())) {
 			client.sendBuzz();
-			hasPolled = true;
-			hasSubmitted = false;
 		} else if ("Submit".equals(e.getActionCommand())) {
-			hasSubmitted = true;
 			timer.cancel();
             timer = null;
 			String selectedOption = getSelectedOptionIndex();
@@ -194,12 +190,12 @@ public class ClientWindow implements ActionListener {
         public void run() {
             SwingUtilities.invokeLater(() -> {
                 if (duration < 0) {
-					if(!hasPolled && poll.isEnabled()) {
+					if (submit.isEnabled() && canAnswer) {
+                        client.sendAnswerFeedback("Didn't answer");
+                    } else {
 						enablePoll(false);
 						client.sendAnswerFeedback("Don't know");
-					} else if (!hasSubmitted) {
-                        client.sendAnswerFeedback("Didn't answer");
-                    }
+					}
                     timerLabel.setText("Timer expired");
                     this.cancel(); 
                     return;
@@ -227,6 +223,7 @@ public class ClientWindow implements ActionListener {
 	}
 
 	public void disableOptions() {
+		canAnswer = true;
 		for (int i = 0; i < options.length; i++) {
 			options[i].setEnabled(false);
 		}
@@ -239,9 +236,6 @@ public class ClientWindow implements ActionListener {
 	}
 
 	public void enableSubmit(boolean enable) {
-		if(enable == false) {
-			hasPolled = false;
-		}
 		submit.setEnabled(enable);
 	}
 
