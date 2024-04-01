@@ -25,6 +25,7 @@ public class ClientHandler implements Runnable {
     private static Set<String> respondedClients = new HashSet<String>();
     private static boolean sentFinal = false;
     private static int answeringQuestion = 0;
+    public static boolean answeringClientLeft = false;
 
     public ClientHandler(Socket socket, int clientId, UDPThread udpThread) {
         this.clientSocket = socket;
@@ -139,7 +140,12 @@ public class ClientHandler implements Runnable {
                 try {
                     scores.remove(String.valueOf(clientId));
                     udpThread.removeClients();
-                    respondedClients.clear();
+                    if (currentQuestionIndex == 5) {
+                        answeringClientLeft = true;
+                        sendFinishMessage();
+                    } else {
+                        respondedClients.clear();
+                    }
                     correctAnswer = "";
                     handleNext();
                 } catch (IOException e1) {
@@ -176,7 +182,6 @@ public class ClientHandler implements Runnable {
 
     private void terminate() throws IOException {
         synchronized (ClientHandler.class) {
-            currentQuestionIndex++;
             for (ClientHandler handler : handlers) {
                 DataOutputStream handlerDos = handler.dos;
                 handlerDos.writeUTF("TERMINATE");          
@@ -233,7 +238,7 @@ public class ClientHandler implements Runnable {
             System.out.println("Sending finish message");
             System.out.println("handler " + handlers.size());
             System.out.println(respondedClients.size());
-            if (respondedClients.size() >= handlers.size()) {
+            if (respondedClients.size() >= handlers.size() || answeringClientLeft) {
                 Set<String> winners = scores.entrySet().stream()
                         .filter(entry -> entry.getValue().equals(highestScore))
                         .map(Map.Entry::getKey)
