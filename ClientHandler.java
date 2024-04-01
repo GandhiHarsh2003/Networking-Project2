@@ -63,17 +63,13 @@ public class ClientHandler implements Runnable {
                 }
                 synchronized (handlers) {
                     if ("Buzz".equals(feedback.trim())) {
-                        boolean wait = true;
-                        while (wait) {
-                            if (udpThread.checkIfEmpty() == false) {
-                                System.out.println("waiting");
-                                wait = false;
-                            }
+                        if (udpThread.checkIfEmpty() == false) {
+                            System.out.println("not waiting");
+                        } else {
+                            System.out.println("waiting");
                         }
-                        if (wait == false) {
-                            respondedClients.clear();
-                            handleBuzz(clientId);
-                        }
+                        respondedClients.clear();
+                        handleBuzz(clientId);
                     } else if (feedback.trim().equals("Didn't answer")) {
                         udpThread.removeClients();
                         System.out.println("Didn't answer so get penalized");
@@ -136,7 +132,7 @@ public class ClientHandler implements Runnable {
                     break;
                 }
             }
-            if(answeringQuestion == clientId) {
+            if (answeringQuestion == clientId) {
                 try {
                     scores.remove(String.valueOf(clientId));
                     udpThread.removeClients();
@@ -184,7 +180,7 @@ public class ClientHandler implements Runnable {
         synchronized (ClientHandler.class) {
             for (ClientHandler handler : handlers) {
                 DataOutputStream handlerDos = handler.dos;
-                handlerDos.writeUTF("TERMINATE");          
+                handlerDos.writeUTF("TERMINATE");
             }
         }
     }
