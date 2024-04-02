@@ -16,6 +16,7 @@ public class Client {
 	private DataInputStream dis;
 	private DataOutputStream dos;
 	public static String usersIP = "127.0.0.1";
+	public boolean answered = false;
 
 	public Client(String serverAddress, int serverPort) {
 		this.serverAddress = serverAddress;
@@ -59,7 +60,10 @@ public class Client {
 							System.out.println("Curr Question is happening");
 							int fileLength = dis.readInt();
 							System.out.println("file length " + fileLength);
-							clientWindow.startTimer();
+							if(answered == false) {
+								clientWindow.startTimer();
+							}
+							answered = false;
 							if (fileLength > 0) {
 								byte[] content = new byte[fileLength];
 								dis.readFully(content, 0, fileLength);
@@ -76,6 +80,8 @@ public class Client {
 							System.out.println("There is an update");
 							String currScore = dis.readUTF();
 							String correctOrWrong = dis.readUTF();
+							clientWindow.startTimer();
+							answered = true;
 							clientWindow.updateScore(currScore, correctOrWrong);
 							break;
 						case "FINISHED":

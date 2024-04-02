@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 public class ClientHandler implements Runnable {
     private static final Set<ClientHandler> handlers = Collections.synchronizedSet(new HashSet<>());
     private static int currentQuestionIndex = 1;
+    public static int totalQuestions = 20;
     private final Socket clientSocket;
     private final UDPThread udpThread;
     private PrintWriter out;
@@ -74,7 +75,7 @@ public class ClientHandler implements Runnable {
                         udpThread.removeClients();
                         System.out.println("Didn't answer so get penalized");
                         updateScore(String.valueOf(clientId), "Penalize");
-                        if (currentQuestionIndex == 5) {
+                        if (currentQuestionIndex == totalQuestions) {
                             respondedClients.add(String.valueOf(clientId));
                             sendFinishMessage();
                             break;
@@ -87,7 +88,7 @@ public class ClientHandler implements Runnable {
                         udpThread.removeClients();
                         System.out.println("This is the correct answer so moving on to the next one");
                         updateScore(String.valueOf(clientId), "Correct");
-                        if (currentQuestionIndex == 5) {
+                        if (currentQuestionIndex == totalQuestions) {
                             respondedClients.add(String.valueOf(clientId));
                             sendFinishMessage();
                             break;
@@ -97,7 +98,7 @@ public class ClientHandler implements Runnable {
                         correctAnswer = "";
                         handleNext();
                     } else if ("Don't know".equals(feedback.trim())) {
-                        if (currentQuestionIndex == 5) {
+                        if (currentQuestionIndex == totalQuestions) {
                             respondedClients.add(String.valueOf(clientId));
                             sendFinishMessage();
                             break;
@@ -110,7 +111,7 @@ public class ClientHandler implements Runnable {
                         System.out.println("WRONG ANSWER!!!!! so moving on to the next one");
                         udpThread.removeClients();
                         updateScore(String.valueOf(clientId), "Wrong");
-                        if (currentQuestionIndex == 5) {
+                        if (currentQuestionIndex == totalQuestions) {
                             respondedClients.add(String.valueOf(clientId));
                             sendFinishMessage();
                             break;
@@ -136,7 +137,7 @@ public class ClientHandler implements Runnable {
                 try {
                     scores.remove(String.valueOf(clientId));
                     udpThread.removeClients();
-                    if (currentQuestionIndex == 5) {
+                    if (currentQuestionIndex == totalQuestions) {
                         answeringClientLeft = true;
                         sendFinishMessage();
                     } else {
