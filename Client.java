@@ -81,6 +81,8 @@ public class Client {
 							String currScore = dis.readUTF();
 							String correctOrWrong = dis.readUTF();
 							clientWindow.startTimer();
+							clientWindow.enableSubmit(false);
+							clientWindow.enablePoll(true);
 							answered = true;
 							clientWindow.updateScore(currScore, correctOrWrong);
 							break;

@@ -124,6 +124,7 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
+            correctAnswer = "";
             Iterator<ClientHandler> iterator = handlers.iterator();
             while (iterator.hasNext()) {
                 ClientHandler handler = iterator.next();
@@ -222,6 +223,7 @@ public class ClientHandler implements Runnable {
 
     private void handleNext() throws IOException {
         synchronized (ClientHandler.class) {
+            answeringQuestion = 0;
             currentQuestionIndex++;
             for (ClientHandler handler : handlers) {
                 handler.sendCurrentQuestion();
