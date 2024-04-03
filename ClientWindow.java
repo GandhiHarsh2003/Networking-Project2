@@ -29,7 +29,6 @@ public class ClientWindow implements ActionListener {
 	// write setters and getters as you need
 
 	public ClientWindow(Client client) {
-		JOptionPane.showMessageDialog(window, "This is a trivia game");
 		this.client = client;
 		window = new JFrame("Trivia");
 		question = new JLabel("Q1. This is a sample question"); // represents the question

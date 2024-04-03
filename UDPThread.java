@@ -22,7 +22,12 @@ public class UDPThread implements Runnable {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String clientId = new String(packet.getData(), 0, packet.getLength()).trim();
-                queue.offer(clientId);
+                synchronized (queue) {
+                    if (!queue.contains(clientId)) {
+                        queue.add(clientId);
+                        System.out.println("Client " + clientId + " added to queue. Queue size is " + queue.size());
+                    }
+                }
                 System.out.println("queue size is " + queue.size());
             } catch (IOException e) {
                 System.out.println("UDP Thread Error: " + e.getMessage());
