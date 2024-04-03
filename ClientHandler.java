@@ -77,6 +77,7 @@ public class ClientHandler implements Runnable {
                         updateScore(String.valueOf(clientId), "Penalize");
                         if (currentQuestionIndex == totalQuestions) {
                             respondedClients.add(String.valueOf(clientId));
+                            answeringClientLeft = true;
                             sendFinishMessage();
                             break;
                         } else {
@@ -90,6 +91,7 @@ public class ClientHandler implements Runnable {
                         updateScore(String.valueOf(clientId), "Correct");
                         if (currentQuestionIndex == totalQuestions) {
                             respondedClients.add(String.valueOf(clientId));
+                            answeringClientLeft = true;
                             sendFinishMessage();
                             break;
                         } else {
@@ -113,6 +115,7 @@ public class ClientHandler implements Runnable {
                         updateScore(String.valueOf(clientId), "Wrong");
                         if (currentQuestionIndex == totalQuestions) {
                             respondedClients.add(String.valueOf(clientId));
+                            answeringClientLeft = true;
                             sendFinishMessage();
                             break;
                         } else {
