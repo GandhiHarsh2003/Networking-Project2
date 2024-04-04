@@ -4,9 +4,10 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Scanner;
 
 public class Client {
-	public static String usersIP = "127.0.0.1";
+	public static String usersIP = "";
 	private Socket socket;
 	private String CLIENT_ID;
 	private final String serverAddress;
@@ -183,6 +184,10 @@ public class Client {
 	}
 
 	public static void main(String[] args) {
+		Scanner sc = new Scanner(System.in);
+        System.out.println("What's the servers IP?");
+		usersIP = sc.nextLine();
+        sc.close();
 		Client client = new Client(usersIP, 1234);
 		client.connectToServer();
 	}
