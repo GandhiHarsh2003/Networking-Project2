@@ -1,4 +1,4 @@
-What is the value of x in the equation 10x - 20 = 30?
+Q10. What is the value of x in the equation 10x - 20 = 30?
 x = 4
 x = 6
 x = 7

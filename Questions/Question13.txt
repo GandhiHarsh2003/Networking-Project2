@@ -1,4 +1,4 @@
-What is the value of x in the equation 2x - 4 = 12?
+Q13. What is the value of x in the equation 2x - 4 = 12?
 x = 6
 x = 7
 x = 8

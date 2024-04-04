@@ -1,4 +1,4 @@
-What is the value of x in the equation 5x - 10 = 20?
+Q4. What is the value of x in the equation 5x - 10 = 20?
 x = 4
 x = 5
 x = 6

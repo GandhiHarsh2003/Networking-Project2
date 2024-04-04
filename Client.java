@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 
 public class Client {
+	public static String usersIP = "127.0.0.1";
 	private Socket socket;
 	private String CLIENT_ID;
 	private final String serverAddress;
@@ -15,7 +16,6 @@ public class Client {
 	public boolean read = true;
 	private DataInputStream dis;
 	private DataOutputStream dos;
-	public static String usersIP = "127.0.0.1";
 	public boolean answered = false;
 
 	public Client(String serverAddress, int serverPort) {
@@ -52,9 +52,11 @@ public class Client {
 							clientWindow.enablePoll(false);
 							clientWindow.startTimer();
 							System.out.println("I was first!");
+							clientWindow.setNotFirstLabel("ANSWER QUICKLY!!");
 							break;
 						case "nack":
 							System.out.println("Not first.");
+							clientWindow.setNotFirstLabel("Buzzed: TOO LATE!!");
 							break;
 						case "Next Question":
 							System.out.println("Curr Question is happening");
@@ -72,6 +74,7 @@ public class Client {
 								displayQuestionFromFile(fileName);
 								clientWindow.enableSubmit(false);
 								clientWindow.enablePoll(true);
+								clientWindow.setNotFirstLabel("Buzzed:");
 								clientWindow.disableOptions();
 								response = "";
 							}
@@ -83,6 +86,7 @@ public class Client {
 							clientWindow.startTimer();
 							clientWindow.enableSubmit(false);
 							clientWindow.enablePoll(true);
+							clientWindow.setNotFirstLabel("Buzzed:");
 							answered = true;
 							clientWindow.updateScore(currScore, correctOrWrong);
 							break;

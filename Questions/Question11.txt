@@ -1,4 +1,4 @@
-What is the value of x in the equation 4x + 8 = 24?
+Q11. What is the value of x in the equation 4x + 8 = 24?
 x = 4
 x = 3
 x = 5

@@ -1,4 +1,4 @@
-What is the value of x in the equation 7x - 14 = 21?
+Q15. What is the value of x in the equation 7x - 14 = 21?
 x = 3
 x = 4
 x = 5

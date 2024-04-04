@@ -1,4 +1,4 @@
-What is the value of x in the equation 8x - 8 = 64?
+Q18. What is the value of x in the equation 8x - 8 = 64?
 x = 8
 x = 9
 x = 10

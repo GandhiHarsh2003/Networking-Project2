@@ -1,4 +1,4 @@
-What is the value of x in the equation 4x - 12 = 12
+Q2. What is the value of x in the equation 4x - 12 = 12
 x = 3
 x = 7
 x = 6

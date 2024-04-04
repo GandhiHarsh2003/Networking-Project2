@@ -127,13 +127,24 @@ public class ClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
+            boolean twice = false;
             correctAnswer = "";
             Iterator<ClientHandler> iterator = handlers.iterator();
             while (iterator.hasNext()) {
                 ClientHandler handler = iterator.next();
                 if (handler.clientId == clientId) {
+                    scores.remove(String.valueOf(clientId));
                     iterator.remove();
                     respondedClients.remove(String.valueOf(clientId));
+                    if(respondedClients.size() + 1 == handlers.size() + 1) {
+                        try {
+                            handleNext();
+                            respondedClients.clear();
+                            twice = true;
+                        } catch (IOException e1) {
+                            System.out.println("Error occured in next question " + e1);
+                        }
+                    }
                     break;
                 }
             }
@@ -148,7 +159,9 @@ public class ClientHandler implements Runnable {
                         respondedClients.clear();
                     }
                     correctAnswer = "";
-                    handleNext();
+                    if(twice == false) {
+                        handleNext();
+                    }
                 } catch (IOException e1) {
                     System.out.println("Error occured in next question " + e1);
                 }
@@ -227,6 +240,7 @@ public class ClientHandler implements Runnable {
     private void handleNext() throws IOException {
         synchronized (ClientHandler.class) {
             answeringQuestion = 0;
+            udpThread.removeClients();
             currentQuestionIndex++;
             for (ClientHandler handler : handlers) {
                 handler.sendCurrentQuestion();

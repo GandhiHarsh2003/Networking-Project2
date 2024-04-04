@@ -1,4 +1,4 @@
-What is the value of x in the equation 3x + 15 = 24?
+Q16. What is the value of x in the equation 3x + 15 = 24?
 x = 1
 x = 2
 x = 3

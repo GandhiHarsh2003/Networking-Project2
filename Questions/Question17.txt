@@ -1,4 +1,4 @@
-What is the value of x in the equation 10x + 20 = 60?
+Q17. What is the value of x in the equation 10x + 20 = 60?
 x = 3
 x = 4
 x = 5

@@ -13,6 +13,7 @@ public class ClientWindow implements ActionListener {
 	private JRadioButton options[];
 	private ButtonGroup optionGroup;
 	private JLabel question;
+	private JLabel notFirst;
 	private static JLabel timerLabel;
 	private JLabel score;
 	private JLabel currScore;
@@ -33,7 +34,7 @@ public class ClientWindow implements ActionListener {
 		window = new JFrame("Trivia");
 		question = new JLabel("Q1. This is a sample question"); // represents the question
 		window.add(question);
-		question.setBounds(10, 5, 350, 100);
+		question.setBounds(10, 5, 450, 100);
 		
 
 		options = new JRadioButton[4];
@@ -47,6 +48,10 @@ public class ClientWindow implements ActionListener {
 			window.add(options[index]);
 			optionGroup.add(options[index]);
 		}
+
+		notFirst = new JLabel("Buzzed: TOO LATE!!");
+		notFirst.setBounds(250, 220, 200, 20);
+		window.add(notFirst);
 
 		timerLabel = new JLabel("TIMER"); // represents the countdown shown on the window
 		timerLabel.setBounds(250, 250, 100, 20);
@@ -78,8 +83,8 @@ public class ClientWindow implements ActionListener {
 		submit.addActionListener(this); // calls actionPerformed of this class
 		window.add(submit);
 
-		window.setSize(400, 400);
-		window.setBounds(50, 50, 400, 400);
+		window.setSize(450, 400);
+		window.setBounds(50, 50, 450, 400);
 		window.setLayout(null);
 		window.setVisible(true);
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -142,7 +147,6 @@ public class ClientWindow implements ActionListener {
 		// // TILL HERE ***
 
 	}
-
 
 	public void updateClientID(String id) {
 		clientIDLable.setText(id);
@@ -244,5 +248,9 @@ public class ClientWindow implements ActionListener {
 
 	public void finished(String message) {
 		JOptionPane.showMessageDialog(window, message);
+	}
+
+	public void setNotFirstLabel(String message) {
+		notFirst.setText(message);
 	}
 }

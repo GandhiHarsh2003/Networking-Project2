@@ -1,4 +1,4 @@
-What is the value of x in the equation 6x + 18 = 36?
+Q7. What is the value of x in the equation 6x + 18 = 36?
 x = 2
 x = 3
 x = 4
