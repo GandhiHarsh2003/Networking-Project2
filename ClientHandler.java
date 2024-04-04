@@ -70,7 +70,12 @@ public class ClientHandler implements Runnable {
                             System.out.println("waiting");
                         }
                         respondedClients.clear();
-                        handleBuzz(clientId);
+                        while(true) {
+                            if(udpThread.checkIfEmpty() == false) {
+                                handleBuzz(clientId);
+                                break;
+                            }
+                        }
                     } else if (feedback.trim().equals("Didn't answer")) {
                         udpThread.removeClients();
                         System.out.println("Didn't answer so get penalized");
