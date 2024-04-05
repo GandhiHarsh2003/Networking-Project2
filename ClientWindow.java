@@ -9,6 +9,7 @@ import javax.swing.*;
 public class ClientWindow implements ActionListener {
 	private static JButton poll;
 	private JLabel clientID;
+	private JLabel previousAnswer;
 	private static JButton submit;
 	private JRadioButton options[];
 	private ButtonGroup optionGroup;
@@ -35,7 +36,6 @@ public class ClientWindow implements ActionListener {
 		question = new JLabel("Q1. This is a sample question"); // represents the question
 		window.add(question);
 		question.setBounds(10, 5, 450, 100);
-		
 
 		options = new JRadioButton[4];
 		optionGroup = new ButtonGroup();
@@ -53,6 +53,10 @@ public class ClientWindow implements ActionListener {
 		notFirst.setBounds(250, 220, 200, 20);
 		window.add(notFirst);
 
+		previousAnswer = new JLabel("Not anwered");
+		previousAnswer.setBounds(250, 190, 200, 20);
+		window.add(previousAnswer);
+
 		timerLabel = new JLabel("TIMER"); // represents the countdown shown on the window
 		timerLabel.setBounds(250, 250, 100, 20);
 		window.add(timerLabel);
@@ -69,9 +73,9 @@ public class ClientWindow implements ActionListener {
 		score.setBounds(50, 250, 50, 20);
 		window.add(score);
 
-		currScore = new JLabel(""); 
-        currScore.setBounds(100, 250, 25, 20); 
-        window.add(currScore);
+		currScore = new JLabel("");
+		currScore.setBounds(100, 250, 25, 20);
+		window.add(currScore);
 
 		poll = new JButton("Poll"); // button that use clicks/ like a buzzer
 		poll.setBounds(10, 300, 100, 20);
@@ -98,12 +102,14 @@ public class ClientWindow implements ActionListener {
 		if ("Poll".equals(e.getActionCommand())) {
 			client.sendBuzz();
 		} else if ("Submit".equals(e.getActionCommand())) {
-			timer.cancel();
-            timer = null;
 			String selectedOption = getSelectedOptionIndex();
-			if (selectedOption != null) {
+			if (selectedOption != "Nothing Selected") {
+				timer.cancel();
+				timer = null;
 				System.out.println("picked the option " + selectedOption);
 				client.sendAnswerFeedback(selectedOption);
+			} else {
+				previousAnswer.setText("Please select an option");
 			}
 		}
 		// System.out.println("You clicked " + e.getActionCommand());
@@ -150,69 +156,69 @@ public class ClientWindow implements ActionListener {
 
 	public void updateClientID(String id) {
 		clientIDLable.setText(id);
-    }
+	}
 
 	public void updateScore(String score, String correctOrWrong) {
 		currScore.setText(score);
-		if(correctOrWrong.equals("Correct")) {
-			JOptionPane.showMessageDialog(window, "Correct Answer!!");
-		} else if(correctOrWrong.equals("Wrong")){
-			JOptionPane.showMessageDialog(window, "Wrong Answer!!");
-		} else if(correctOrWrong.equals("Timer ran out")){
+		if (correctOrWrong.equals("Correct")) {
+			previousAnswer.setText("CORRECT!!");
+		} else if (correctOrWrong.equals("Wrong")) {
+			previousAnswer.setText("WRONG!!");
+		} else if (correctOrWrong.equals("Timer ran out")) {
 			JOptionPane.showMessageDialog(window, "Time Up!! Be Quicker Next Time!!");
 		}
-    }
+	}
 
 	private String getSelectedOptionIndex() {
-        for (int i = 0; i < options.length; i++) {
-            if (options[i].isSelected()) {
-                return String.valueOf(i + 1); 
-            }
-        }
-        return null; 
-    }
+		for (int i = 0; i < options.length; i++) {
+			if (options[i].isSelected()) {
+				return String.valueOf(i + 1);
+			}
+		}
+		return "Nothing Selected";
+	}
 
 	public void startTimer() {
-        if (timer != null) {
-            timer.cancel();
-        }
-        timer = new Timer();
-        clock = new TimerCode(10);
-        timer.schedule(clock, 0, 1000); 
-    }
+		if (timer != null) {
+			timer.cancel();
+		}
+		timer = new Timer();
+		clock = new TimerCode(10);
+		timer.schedule(clock, 0, 1000);
+	}
 
 	// this class is responsible for running the timer on the window
 	private static class TimerCode extends TimerTask {
-        private int duration;
+		private int duration;
 
-        public TimerCode(int duration) {
-            this.duration = duration;
-        }
+		public TimerCode(int duration) {
+			this.duration = duration;
+		}
 
-        @Override
-        public void run() {
-            SwingUtilities.invokeLater(() -> {
-                if (duration < 0) {
+		@Override
+		public void run() {
+			SwingUtilities.invokeLater(() -> {
+				if (duration < 0) {
 					if (submit.isEnabled() && canAnswer) {
-                        client.sendAnswerFeedback("Didn't answer");
-                    } else {
+						client.sendAnswerFeedback("Didn't answer");
+					} else {
 						enablePoll(false);
 						client.sendAnswerFeedback("Don't know");
 					}
-                    timerLabel.setText("Timer expired");
-                    this.cancel(); 
-                    return;
-                }
-                if (duration < 6) {
-                    timerLabel.setForeground(Color.red);
-                } else {
-                    timerLabel.setForeground(Color.black);
-                }
-                timerLabel.setText("Time: " + duration + "s");
-                duration--;
-            });
-        }
-    }
+					timerLabel.setText("Timer expired");
+					this.cancel();
+					return;
+				}
+				if (duration < 6) {
+					timerLabel.setForeground(Color.red);
+				} else {
+					timerLabel.setForeground(Color.black);
+				}
+				timerLabel.setText("Time: " + duration + "s");
+				duration--;
+			});
+		}
+	}
 
 	public void updateQuestion(String text) {
 		question.setText(text);

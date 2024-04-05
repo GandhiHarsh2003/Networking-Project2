@@ -141,6 +141,7 @@ public class ClientHandler implements Runnable {
                     scores.remove(String.valueOf(clientId));
                     iterator.remove();
                     respondedClients.remove(String.valueOf(clientId));
+                    udpThread.removeID(clientId);
                     if(respondedClients.size() + 1 == handlers.size() + 1) {
                         try {
                             handleNext();

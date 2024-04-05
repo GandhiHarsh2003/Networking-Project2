@@ -55,4 +55,11 @@ public class UDPThread implements Runnable {
     public boolean checkIfEmpty() {
         return queue.isEmpty();
     }
+
+    public void removeID(int clientID) {
+        String ID = String.valueOf(clientID);
+        if(queue.contains(ID)) {
+            queue.remove(String.valueOf(clientID));
+        }
+    }
 }

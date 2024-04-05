@@ -9,7 +9,7 @@ import java.util.Scanner;
 public class Client {
 	public static String usersIP = "";
 	private Socket socket;
-	private String CLIENT_ID;
+	private String CLIENT_ID = "127.0.0.1";
 	private final String serverAddress;
 	private final int serverPort;
 	private ClientWindow clientWindow;
@@ -184,10 +184,10 @@ public class Client {
 	}
 
 	public static void main(String[] args) {
-		Scanner sc = new Scanner(System.in);
-        System.out.println("What's the servers IP?");
-		usersIP = sc.nextLine();
-        sc.close();
+		// Scanner sc = new Scanner(System.in);
+        // System.out.println("What's the servers IP?");
+		// usersIP = sc.nextLine();
+        // sc.close();
 		Client client = new Client(usersIP, 1234);
 		client.connectToServer();
 	}
