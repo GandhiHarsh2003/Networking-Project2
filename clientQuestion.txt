@@ -1,6 +1,6 @@
-Q8. What is the value of x in the equation 8x - 16 = 32?
-x = 4
-x = 5
-x = 6
-x = 7
-Correct: 3
+Q18. What is the value of x in the equation 8x - 8 = 64?
+x = 8
+x = 9
+x = 10
+x = 11
+Correct: 2

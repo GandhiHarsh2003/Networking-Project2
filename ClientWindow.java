@@ -101,6 +101,10 @@ public class ClientWindow implements ActionListener {
 	public void actionPerformed(ActionEvent e) {
 		if ("Poll".equals(e.getActionCommand())) {
 			client.sendBuzz();
+			if(timer != null) {
+				timer.cancel();
+				timer = null;
+			}
 		} else if ("Submit".equals(e.getActionCommand())) {
 			String selectedOption = getSelectedOptionIndex();
 			if (selectedOption != "Nothing Selected") {
@@ -165,7 +169,7 @@ public class ClientWindow implements ActionListener {
 		} else if (correctOrWrong.equals("Wrong")) {
 			previousAnswer.setText("WRONG!!");
 		} else if (correctOrWrong.equals("Timer ran out")) {
-			JOptionPane.showMessageDialog(window, "Time Up!! Be Quicker Next Time!!");
+			previousAnswer.setText("TIME UP!!");
 		}
 	}
 
@@ -238,9 +242,9 @@ public class ClientWindow implements ActionListener {
 		}
 	}
 
-	public void enableOptions() {
+	public void enableOptions(boolean check) {
 		for (int i = 0; i < options.length; i++) {
-			options[i].setEnabled(true);
+			options[i].setEnabled(check);
 		}
 	}
 

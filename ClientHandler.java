@@ -21,7 +21,7 @@ public class ClientHandler implements Runnable {
     private DataInputStream dis;
     private BufferedReader in;
     private int clientId;
-    private String correctAnswer = "";
+    private static String correctAnswer = "";
     private static HashMap<String, Integer> scores = new HashMap<>();
     private static Set<String> respondedClients = new HashSet<String>();
     private static boolean sentFinal = false;
@@ -53,12 +53,12 @@ public class ClientHandler implements Runnable {
                     handlers.add(this);
                 }
                 sendCurrentQuestion();
-                System.out.println("Next");
             }
 
             String feedback;
             while ((feedback = dis.readUTF()) != null) {
                 System.out.println("feedback from client " + feedback);
+                System.out.println("Correct answer is " + correctAnswer);
                 if (correctAnswer.equals("")) {
                     correctAnswer = findAnswer();
                 }
@@ -69,29 +69,27 @@ public class ClientHandler implements Runnable {
                         } else {
                             System.out.println("waiting");
                         }
-                        respondedClients.clear();
-                        while(true) {
-                            if(udpThread.checkIfEmpty() == false) {
+                        while (true) {
+                            if (udpThread.checkIfEmpty() == false) {
                                 handleBuzz(clientId);
                                 break;
                             }
                         }
                     } else if (feedback.trim().equals("Didn't answer")) {
-                        udpThread.removeClients();
                         System.out.println("Didn't answer so get penalized");
                         updateScore(String.valueOf(clientId), "Penalize");
-                        if (currentQuestionIndex == totalQuestions) {
-                            respondedClients.add(String.valueOf(clientId));
-                            answeringClientLeft = true;
+                        respondedClients.add(String.valueOf(clientId));
+                        if (currentQuestionIndex == totalQuestions && respondedClients.size() == handlers.size()) {
                             sendFinishMessage();
                             break;
-                        } else {
-                            respondedClients.clear();
                         }
-                        correctAnswer = "";
-                        handleNext();
+                        udpThread.removeID(clientId);
+                        if (udpThread.checkIfEmpty() == false) {
+                            giveSecondChanceToNextClient();
+                        } else {
+                            checkIfAllResponded();
+                        }
                     } else if (correctAnswer.equals(feedback.trim())) {
-                        udpThread.removeClients();
                         System.out.println("This is the correct answer so moving on to the next one");
                         updateScore(String.valueOf(clientId), "Correct");
                         if (currentQuestionIndex == totalQuestions) {
@@ -99,54 +97,52 @@ public class ClientHandler implements Runnable {
                             answeringClientLeft = true;
                             sendFinishMessage();
                             break;
-                        } else {
-                            respondedClients.clear();
                         }
-                        correctAnswer = "";
                         handleNext();
                     } else if ("Don't know".equals(feedback.trim())) {
-                        if (currentQuestionIndex == totalQuestions) {
-                            respondedClients.add(String.valueOf(clientId));
+                        respondedClients.add(String.valueOf(clientId));
+                        if (currentQuestionIndex == totalQuestions && respondedClients.size() == handlers.size()) {
                             sendFinishMessage();
                             break;
                         }
-                        respondedClients.add(String.valueOf(clientId));
                         System.out.println("didn't answer " + clientId);
                         checkIfAllResponded();
-                        correctAnswer = "";
                     } else if (!correctAnswer.equals(feedback.trim())) {
                         System.out.println("WRONG ANSWER!!!!! so moving on to the next one");
-                        udpThread.removeClients();
                         updateScore(String.valueOf(clientId), "Wrong");
-                        if (currentQuestionIndex == totalQuestions) {
-                            respondedClients.add(String.valueOf(clientId));
-                            answeringClientLeft = true;
+                        respondedClients.add(String.valueOf(clientId));
+                        if (currentQuestionIndex == totalQuestions && respondedClients.size() == handlers.size()) {
                             sendFinishMessage();
                             break;
-                        } else {
-                            respondedClients.clear();
                         }
-                        correctAnswer = "";
-                        handleNext();
+                        udpThread.removeID(clientId);
+                        if (udpThread.checkIfEmpty() == false) {
+                            giveSecondChanceToNextClient();
+                        } else {
+                            checkIfAllResponded();
+                        }
                     }
                 }
             }
         } catch (IOException e) {
-            boolean twice = false;
-            correctAnswer = "";
             Iterator<ClientHandler> iterator = handlers.iterator();
             while (iterator.hasNext()) {
                 ClientHandler handler = iterator.next();
                 if (handler.clientId == clientId) {
+                    udpThread.removeID(clientId);
+                    respondedClients.remove(String.valueOf(clientId));
                     scores.remove(String.valueOf(clientId));
                     iterator.remove();
-                    respondedClients.remove(String.valueOf(clientId));
-                    udpThread.removeID(clientId);
-                    if(respondedClients.size() + 1 == handlers.size() + 1) {
+                    if (currentQuestionIndex == totalQuestions) {
+                        try {
+                            sendFinishMessage();
+                        } catch (IOException e1) {
+                            System.out.println("Error occured in sending win message " + e1);
+                        }
+                    }
+                    if (respondedClients.size() == handlers.size()) {
                         try {
                             handleNext();
-                            respondedClients.clear();
-                            twice = true;
                         } catch (IOException e1) {
                             System.out.println("Error occured in next question " + e1);
                         }
@@ -157,16 +153,15 @@ public class ClientHandler implements Runnable {
             if (answeringQuestion == clientId) {
                 try {
                     scores.remove(String.valueOf(clientId));
-                    udpThread.removeClients();
-                    if (currentQuestionIndex == totalQuestions) {
-                        answeringClientLeft = true;
-                        sendFinishMessage();
+                    if (udpThread.checkIfEmpty() == false) {
+                        udpThread.removeID(clientId);
+                        giveSecondChanceToNextClient();
                     } else {
-                        respondedClients.clear();
-                    }
-                    correctAnswer = "";
-                    if(twice == false) {
-                        handleNext();
+                        if (currentQuestionIndex == totalQuestions) {
+                            sendFinishMessage();
+                        } else {
+                            checkIfAllResponded();
+                        }
                     }
                 } catch (IOException e1) {
                     System.out.println("Error occured in next question " + e1);
@@ -178,6 +173,40 @@ public class ClientHandler implements Runnable {
                 killSwitch();
             }
         }
+    }
+
+
+    private void giveSecondChanceToNextClient() throws IOException {
+        String nextClientId = udpThread.firstInLine();
+        if (nextClientId != null) {
+            System.out.println("Giving a second chance to client: " + nextClientId);
+            sendAckToSecondClient(nextClientId);
+        } else {
+            System.out.println("No more clients in line.");
+            handleNext();
+        }
+    }
+
+    private void sendAckToSecondClient(String clientId) throws IOException {
+        ClientHandler clientHandler = findClientHandlerById(clientId);
+        answeringQuestion = Integer.parseInt(clientId);
+        if (clientHandler != null) {
+            clientHandler.dos.writeUTF("ack");
+            clientHandler.dos.flush();
+        } else {
+            System.err.println("ClientHandler not found for ID: " + clientId);
+        }
+    }
+
+    private ClientHandler findClientHandlerById(String clientId) {
+        synchronized (handlers) {
+            for (ClientHandler handler : handlers) {
+                if (String.valueOf(handler.clientId).equals(clientId)) {
+                    return handler;
+                }
+            }
+        }
+        return null;
     }
 
     private void killSwitch() {
@@ -212,7 +241,8 @@ public class ClientHandler implements Runnable {
     private void checkIfAllResponded() throws IOException {
         System.out.println("res: " + respondedClients.size());
         System.out.println("han: " + handlers.size());
-        if (respondedClients.size() == handlers.size()) {
+        if (respondedClients.size() == handlers.size() && currentQuestionIndex != 20) {
+            correctAnswer = "";
             respondedClients.clear();
             handleNext();
         }
@@ -245,7 +275,9 @@ public class ClientHandler implements Runnable {
 
     private void handleNext() throws IOException {
         synchronized (ClientHandler.class) {
+            correctAnswer = "";
             answeringQuestion = 0;
+            respondedClients.clear();
             udpThread.removeClients();
             currentQuestionIndex++;
             for (ClientHandler handler : handlers) {
@@ -258,8 +290,6 @@ public class ClientHandler implements Runnable {
         int highestScore = scores.values().stream().max(Integer::compare).orElse(0);
         synchronized (ClientHandler.class) {
             System.out.println("Sending finish message");
-            System.out.println("handler " + handlers.size());
-            System.out.println(respondedClients.size());
             if (respondedClients.size() >= handlers.size() || answeringClientLeft) {
                 Set<String> winners = scores.entrySet().stream()
                         .filter(entry -> entry.getValue().equals(highestScore))
@@ -267,8 +297,6 @@ public class ClientHandler implements Runnable {
                         .collect(Collectors.toSet());
 
                 for (ClientHandler handler : handlers) {
-                    System.out.println("Highest Score: " + highestScore);
-                    System.out.println("Winners: " + winners);
                     DataOutputStream handlerDos = handler.dos;
                     handlerDos.writeUTF("FINISHED");
                     if (winners.contains(String.valueOf(handler.clientId))) {
@@ -301,6 +329,7 @@ public class ClientHandler implements Runnable {
     }
 
     private void sendCurrentQuestion() throws IOException {
+        correctAnswer = "";
         String questionFilePath = "Questions/Question" + currentQuestionIndex + ".txt";
         byte[] fileContent = Files.readAllBytes(Paths.get(questionFilePath));
         dos.writeUTF("Next Question");
@@ -311,13 +340,13 @@ public class ClientHandler implements Runnable {
 
     private void handleBuzz(int clientID) throws IOException {
         String firstClientId = udpThread.firstInLine();
-        System.out.println("sending ack to " + firstClientId);
         if (String.valueOf(clientID).equals(firstClientId)) {
+            System.out.println("sending ack to " + firstClientId);
             answeringQuestion = clientId;
-            System.out.println("sending ack");
             dos.writeUTF("ack");
             dos.flush();
         } else {
+            System.out.println("sending nack to " + clientID);
             dos.writeUTF("nack");
             dos.flush();
         }

@@ -9,7 +9,7 @@ import java.util.Scanner;
 public class Client {
 	public static String usersIP = "";
 	private Socket socket;
-	private String CLIENT_ID = "127.0.0.1";
+	private String CLIENT_ID;
 	private final String serverAddress;
 	private final int serverPort;
 	private ClientWindow clientWindow;
@@ -17,12 +17,10 @@ public class Client {
 	public boolean read = true;
 	private DataInputStream dis;
 	private DataOutputStream dos;
-	public boolean answered = false;
 
 	public Client(String serverAddress, int serverPort) {
 		this.serverAddress = serverAddress;
 		this.serverPort = serverPort;
-		this.clientWindow = new ClientWindow(this);
 	}
 
 	public void connectToServer() {
@@ -30,6 +28,7 @@ public class Client {
 			socket = new Socket(serverAddress, serverPort);
 			dos = new DataOutputStream(socket.getOutputStream());
 			dis = new DataInputStream(socket.getInputStream());
+			this.clientWindow = new ClientWindow(this);
 			String clientId = dis.readUTF();
 			CLIENT_ID = clientId;
 			clientWindow.updateClientID(clientId);
@@ -48,7 +47,7 @@ public class Client {
 					System.out.println("Response from server: " + response);
 					switch (response) {
 						case "ack":
-							clientWindow.enableOptions();
+							clientWindow.enableOptions(true);
 							clientWindow.enableSubmit(true);
 							clientWindow.enablePoll(false);
 							clientWindow.startTimer();
@@ -57,16 +56,13 @@ public class Client {
 							break;
 						case "nack":
 							System.out.println("Not first.");
-							clientWindow.setNotFirstLabel("Buzzed: TOO LATE!!");
+							clientWindow.setNotFirstLabel("Added to queue!");
 							break;
 						case "Next Question":
 							System.out.println("Curr Question is happening");
 							int fileLength = dis.readInt();
 							System.out.println("file length " + fileLength);
-							if(answered == false) {
-								clientWindow.startTimer();
-							}
-							answered = false;
+							clientWindow.startTimer();
 							if (fileLength > 0) {
 								byte[] content = new byte[fileLength];
 								dis.readFully(content, 0, fileLength);
@@ -84,11 +80,11 @@ public class Client {
 							System.out.println("There is an update");
 							String currScore = dis.readUTF();
 							String correctOrWrong = dis.readUTF();
-							clientWindow.startTimer();
+							//clientWindow.startTimer();
+							clientWindow.enableOptions(false);
 							clientWindow.enableSubmit(false);
-							clientWindow.enablePoll(true);
+							clientWindow.enablePoll(false);
 							clientWindow.setNotFirstLabel("Buzzed:");
-							answered = true;
 							clientWindow.updateScore(currScore, correctOrWrong);
 							break;
 						case "FINISHED":
@@ -184,10 +180,10 @@ public class Client {
 	}
 
 	public static void main(String[] args) {
-		// Scanner sc = new Scanner(System.in);
-        // System.out.println("What's the servers IP?");
-		// usersIP = sc.nextLine();
-        // sc.close();
+		Scanner sc = new Scanner(System.in);
+        System.out.println("What's the servers IP?");
+		usersIP = sc.nextLine();
+        sc.close();
 		Client client = new Client(usersIP, 1234);
 		client.connectToServer();
 	}
